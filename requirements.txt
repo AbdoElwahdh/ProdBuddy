@@ -1,0 +1,13 @@
+supabase
+openai
+pydantic
+typing
+python-dotenv
+pillow
+google-genai
+ipykernel
+requests
+fastapi
+tenacity
+httpx
+uvicorn
