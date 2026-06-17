@@ -18,11 +18,18 @@
 
     <div class="app-container">
         
-        <!-- Left Column: Tasks Matrix & Ideas -->
-        <div class="column left-column">
+        <!-- Tab Navigation -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('tasks-panel')" id="btn-tasks-panel"><i class="fa-solid fa-list-check"></i> Tasks Matrix</button>
+            <button class="tab-btn" onclick="switchTab('ideas-panel')" id="btn-ideas-panel"><i class="fa-regular fa-lightbulb"></i> Ideas</button>
+            <button class="tab-btn" onclick="switchTab('shoplist-panel')" id="btn-shoplist-panel"><i class="fa-solid fa-cart-shopping"></i> Shop List</button>
+            <button class="tab-btn" onclick="switchTab('notes-panel')" id="btn-notes-panel"><i class="fa-regular fa-note-sticky"></i> Notes</button>
+        </nav>
+
+        <div class="tabs-content-area">
             
             <!-- Tasks Matrix -->
-            <section class="panel tasks-panel">
+            <section class="panel tasks-panel tab-panel active" id="tasks-panel">
                 <div class="panel-header">
                     <h2>Tasks MATRIX</h2>
                     <button class="icon-btn add-btn" onclick="openModal('tasks')"><i class="fa-solid fa-plus"></i></button>
@@ -49,7 +56,7 @@
             </section>
 
             <!-- Ideas -->
-            <section class="panel ideas-panel">
+            <section class="panel ideas-panel tab-panel hidden" id="ideas-panel">
                 <div class="panel-header">
                     <h2>Ideas</h2>
                     <button class="icon-btn add-btn" onclick="openModal('ideas')"><i class="fa-solid fa-plus"></i></button>
@@ -57,13 +64,8 @@
                 <div class="list-container scrollable-list" id="ideas-list"></div>
             </section>
 
-        </div>
-
-        <!-- Right Column: Shoplist & Notes -->
-        <div class="column right-column">
-            
             <!-- Shoplist -->
-            <section class="panel shoplist-panel">
+            <section class="panel shoplist-panel tab-panel hidden" id="shoplist-panel">
                 <div class="panel-header">
                     <h2>Shop List</h2>
                     <button class="icon-btn add-btn" onclick="openModal('shopitems')"><i class="fa-solid fa-plus"></i></button>
@@ -72,7 +74,7 @@
             </section>
 
             <!-- Notes -->
-            <section class="panel notes-panel">
+            <section class="panel notes-panel tab-panel hidden" id="notes-panel">
                 <div class="panel-header">
                     <h2>Notes</h2>
                     <button class="icon-btn add-btn" onclick="openModal('notes')"><i class="fa-solid fa-plus"></i></button>
@@ -83,10 +85,42 @@
         </div>
     </div>
 
-    <!-- Floating Mic Button -->
-    <button class="fab-mic" title="Voice Input (Coming Soon)">
-        <i class="fa-solid fa-microphone"></i>
-    </button>
+    <!-- Floating AI Widget -->
+    <div class="ai-widget-container">
+        
+        <!-- Main Chat Window -->
+        <div class="ai-window hidden glass-panel" id="ai-main-window">
+            <div class="ai-window-header">
+                <h3><i class="fa-solid fa-robot"></i> ProdBuddy AI</h3>
+                <button class="close-btn" onclick="toggleAiMenu()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="chat-container small-chat" id="chat-messages">
+                <div class="chat-message ai-message">
+                    Hello! I'm ProdBuddy. How can I help you today?
+                </div>
+            </div>
+            
+            <div class="chat-input-area" id="chat-input-area">
+                <button class="icon-btn action-icon-btn" id="mic-action-btn" onclick="toggleVoiceRecord()" title="Record Voice">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+                <button class="icon-btn action-icon-btn" title="Live Call (Comming Soon)">
+                    <i class="fa-solid fa-phone"></i>
+                </button>
+                <input type="text" id="chat-input" placeholder="Message ProdBuddy..." onkeypress="handleChatEnter(event)">
+                <button class="icon-btn send-btn" onclick="sendChatMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Toggle Button -->
+        <button class="fab-ai" id="ai-toggle-btn" onclick="toggleAiMenu()">
+            <i class="fa-solid fa-comment-dots"></i>
+        </button>
+
+    </div>
 
     <!-- Global Modal -->
     <div id="unified-modal" class="modal-overlay hidden">

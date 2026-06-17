@@ -22,6 +22,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
+// Tabs Logic
+// ==========================================
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.add('hidden');
+        panel.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const targetPanel = document.getElementById(tabId);
+    if (targetPanel) {
+        targetPanel.classList.remove('hidden');
+        targetPanel.classList.add('active');
+    }
+    
+    const targetBtn = document.getElementById(`btn-${tabId}`);
+    if (targetBtn) {
+        targetBtn.classList.add('active');
+    }
+}
+
+// ==========================================
 // API Calls
 // ==========================================
 
@@ -263,3 +289,210 @@ function escapeHtml(unsafe) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+// ==========================================
+// Chatbot, Voice & AI Widget Logic
+// ==========================================
+
+function toggleAiMenu() {
+    const mainWindow = document.getElementById('ai-main-window');
+    mainWindow.classList.toggle('hidden');
+    
+    if (!mainWindow.classList.contains('hidden')) {
+        setTimeout(() => document.getElementById('chat-input').focus(), 300);
+    }
+}
+
+// Voice Recording Setup
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+let currentStream;
+
+async function toggleVoiceRecord() {
+    const micBtn = document.getElementById('mic-action-btn');
+    const inputField = document.getElementById('chat-input');
+    
+    if (!isRecording) {
+        // Start recording
+        try {
+            currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(currentStream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                if (audioChunks.length > 0) {
+                    await processAudioBlob(audioBlob);
+                }
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            
+            // Update UI
+            micBtn.style.color = "var(--accent-red)";
+            micBtn.innerHTML = '<i class="fa-solid fa-stop"></i>'; // Change icon to stop
+            inputField.placeholder = "Listening... (Tap stop to send)";
+            inputField.disabled = true;
+            
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            alert("Could not access microphone. Please check permissions.");
+        }
+    } else {
+        // Stop recording
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+        }
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+        isRecording = false;
+        
+        // Reset UI
+        micBtn.style.color = "";
+        micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+        inputField.placeholder = "Message ProdBuddy...";
+        inputField.disabled = false;
+        inputField.focus();
+    }
+}
+
+async function processAudioBlob(blob) {
+    // Convert Blob to Base64
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async function() {
+        // Gets "data:audio/webm;base64,....." -> we just want the base64 part
+        const base64data = reader.result.split(',')[1];
+        
+        // Add optimistic UI message indicating transcription
+        const userMsgId = addChatMessageToUI("🎙️ Transcribing audio...", 'user');
+
+        try {
+            const transcribePayload = {
+                user_id: USER_ID,
+                audio_base64: base64data
+            };
+            
+            // 1. Send to Transcribe API
+            const transcribeResponse = await apiRequest('/chat/transcribe/', 'POST', transcribePayload);
+            
+            let transcribedText = "🎙️ [Unintelligible Audio]";
+            if (transcribeResponse && transcribeResponse.text) {
+                transcribedText = transcribeResponse.text;
+            }
+            
+            // Update the user's chat bubble with the actual text
+            const userMsgEl = document.getElementById(userMsgId);
+            if (userMsgEl) {
+                userMsgEl.textContent = transcribedText;
+            }
+            
+            // 2. Add 'thinking' state for the AI
+            const thinkingId = addChatMessageToUI('ProdBuddy is thinking...', 'ai');
+            
+            // 3. Send the transcribed text to the normal Chat API
+            const chatPayload = {
+                user_id: USER_ID,
+                message: transcribedText
+            };
+            
+            const chatResponse = await apiRequest('/chat/', 'POST', chatPayload);
+            
+            // Update the AI's chat bubble
+            const msgEl = document.getElementById(thinkingId);
+            if (msgEl) {
+                msgEl.textContent = chatResponse.reply || "Sorry, I didn't get a proper response.";
+            } else {
+                addChatMessageToUI(chatResponse.reply || "Error", 'ai');
+            }
+
+        } catch (error) {
+            console.error('Error processing audio or chat:', error);
+            const userMsgEl = document.getElementById(userMsgId);
+            if (userMsgEl) userMsgEl.textContent += " (Failed to process)";
+        }
+    }
+}
+
+// Close AI widget if clicking outside of it
+document.addEventListener('click', (event) => {
+    const container = document.querySelector('.ai-widget-container');
+    const mainWindow = document.getElementById('ai-main-window');
+    
+    if (container && mainWindow && !container.contains(event.target)) {
+        mainWindow.classList.add('hidden');
+    }
+});
+
+function handleChatEnter(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+async function sendChatMessage() {
+    const inputEl = document.getElementById('chat-input');
+    const messageText = inputEl.value.trim();
+    if (!messageText) return;
+
+    // Clear input
+    inputEl.value = '';
+
+    // Render User Message
+    addChatMessageToUI(messageText, 'user');
+
+    // Rendering thinking state (optional, just placeholder text)
+    const thinkingId = addChatMessageToUI('ProdBuddy is thinking...', 'ai');
+
+    try {
+        const payload = {
+            message: messageText,
+            user_id: USER_ID
+        };
+
+        const response = await apiRequest('/chat/', 'POST', payload);
+
+        // Update thinking state with actual response
+        const msgEl = document.getElementById(thinkingId);
+        if (msgEl) {
+            msgEl.textContent = response.reply;
+        } else {
+             addChatMessageToUI(response.reply, 'ai');
+        }
+
+    } catch (error) {
+        console.error('Chat Error:', error);
+        const msgEl = document.getElementById(thinkingId);
+        if (msgEl) {
+            msgEl.textContent = 'Sorry, there was an error processing your request.';
+        }
+    }
+}
+
+function addChatMessageToUI(text, sender) {
+    const container = document.getElementById('chat-messages');
+    const msgDiv = document.createElement('div');
+    // Ensure unique ID even if called multiple times in the same millisecond
+    const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+    msgDiv.id = msgId;
+    msgDiv.className = `chat-message ${sender}-message`;
+    msgDiv.textContent = text;
+    
+    container.appendChild(msgDiv);
+    
+    // Auto scroll to bottom
+    container.scrollTop = container.scrollHeight;
+    
+    return msgId;
+}
+

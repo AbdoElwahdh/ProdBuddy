@@ -7,6 +7,7 @@ from app.api.routes.ideas_routes import router as ideas_router
 from app.api.routes.notes_routes import router as notes_router
 from app.api.routes.shopitems_routes import router as shopitems_router
 from app.api.routes.dashboard_routes import router as dashboard_router
+from app.api.routes.chat_routes import router as chat_router
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -30,7 +31,7 @@ app.include_router(ideas_router, prefix="/api/v1")
 app.include_router(notes_router, prefix="/api/v1")
 app.include_router(shopitems_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
-
+app.include_router(chat_router, prefix="/api/v1")
 
 @app.get("/")
 def root():

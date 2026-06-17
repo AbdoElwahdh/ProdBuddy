@@ -23,7 +23,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-primary);
     min-height: 100vh;
-    overflow: hidden;
+    overflow-y: auto; /* Changed to allow scrolling */
     position: relative;
 }
 
@@ -42,28 +42,62 @@ body {
 
 /* Layout Grid */
 .app-container {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 24px;
-    padding: 24px;
-    height: 100vh;
-    max-width: 1800px;
-    margin: 0 auto;
-}
-
-.column {
     display: flex;
     flex-direction: column;
     gap: 24px;
-    height: 100%;
+    padding: 24px;
+    min-height: 100vh;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.left-column {
-    flex: 2;
+/* Tabs Navigation */
+.tabs-nav {
+    display: flex;
+    gap: 12px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 12px;
+    overflow-x: auto;
 }
 
-.right-column {
-    flex: 1;
+.tab-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    background: var(--accent-blue);
+    color: white;
+}
+
+.tabs-content-area {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.tab-panel.hidden {
+    display: none !important;
 }
 
 /* Glass Panels */
@@ -84,10 +118,7 @@ body {
     border-color: rgba(255, 255, 255, 0.15);
 }
 
-.tasks-panel { flex-grow: 2; height: 60%; }
-.ideas-panel { flex-grow: 1; height: 40%; }
-.shoplist-panel { flex-grow: 1; height: 50%; }
-.notes-panel { flex-grow: 1; height: 50%; }
+/* Removed static flex heights so panels expand freely based on content */
 
 .panel-header {
     display: flex;
@@ -142,7 +173,7 @@ body {
 /* Lists & Items */
 .list-container {
     flex-grow: 1;
-    overflow-y: auto;
+    overflow: visible; /* Prevent double scrollbars, let the page scroll naturally */
     padding-right: 4px;
     display: flex;
     flex-direction: column;
@@ -206,6 +237,83 @@ body {
     text-overflow: ellipsis;
 }
 
+/* Chat Panel Styles (Moved to floating window) */
+.small-chat {
+    max-height: 400px;
+    height: 350px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.chat-message {
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 85%;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.ai-message {
+    background: rgba(88, 166, 255, 0.1);
+    border: 1px solid rgba(88, 166, 255, 0.2);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    color: var(--text-primary);
+}
+
+.user-message {
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.2);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    color: var(--text-primary);
+}
+
+.chat-input-area {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 14px;
+    border-top: 1px solid var(--panel-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+#chat-input {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    padding: 10px 12px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+#chat-input:focus {
+    outline: none;
+}
+
+.action-icon-btn {
+    border: none;
+    color: var(--text-secondary);
+}
+.action-icon-btn:hover {
+    color: var(--accent-blue);
+    background: transparent;
+}
+
+.send-btn {
+    background: var(--accent-blue);
+    border: none;
+    color: #fff;
+}
+
+.send-btn:hover {
+    background: #318bf0;
+}
+
 /* Buttons */
 .icon-btn {
     background: transparent;
@@ -241,33 +349,88 @@ body {
 .add-btn { width: 32px; height: 32px; border-radius: 8px; background: rgba(248, 81, 73, 0.1); color: var(--accent-red); border-color: transparent;}
 .add-btn:hover { background: var(--accent-red); color: white; }
 
-/* Mic Button */
-.fab-mic {
+/* AI Floating Widget */
+.ai-widget-container {
     position: fixed;
     bottom: 40px;
     right: 40px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 16px;
+}
+
+/* Main Toggle Button */
+.fab-ai {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: transparent;
-    border: 2px solid var(--accent-red);
-    color: var(--accent-red);
+    background: var(--accent-blue);
+    border: none;
+    color: white;
     font-size: 1.5rem;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(248, 81, 73, 0.3);
+    box-shadow: 0 4px 15px rgba(88, 166, 255, 0.4);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    z-index: 100;
 }
 
-.fab-mic:hover {
+.fab-ai:hover {
     transform: scale(1.1);
-    background: var(--accent-red);
-    color: white;
-    box-shadow: 0 8px 25px rgba(248, 81, 73, 0.5);
+    box-shadow: 0 8px 25px rgba(88, 166, 255, 0.6);
 }
+
+/* Removed Action Menu Styles */
+
+/* Floating AI Windows */
+.ai-window {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 380px;
+    background: #161b22;
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    transform-origin: bottom right;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    z-index: 1001;
+}
+
+.ai-window.hidden {
+    opacity: 0;
+    transform: scale(0.9) translate(20px, 20px);
+    pointer-events: none;
+}
+
+.ai-window-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-window-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+}
+
+/* Chat specific adjustments */
+.ai-window .chat-container::-webkit-scrollbar { width: 6px; }
+.ai-window .chat-container::-webkit-scrollbar-track { background: transparent; }
+.ai-window .chat-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
 /* Modals */
 .modal-overlay {
